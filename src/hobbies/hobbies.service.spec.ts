@@ -164,10 +164,10 @@ describe('HobbiesService', () => {
 
     it('should throw if HobbySchema remove throws', async () => {
 
-      jest.spyOn(userModel, 'findByIdAndUpdate').mockImplementationOnce(jest.fn());
       jest
         .spyOn(hobbyModel, 'findOneAndDelete')
         .mockRejectedValueOnce(new BadRequestException('Error: hobby could not be deleted'));
+      jest.spyOn(userModel, 'findByIdAndUpdate').mockImplementationOnce(jest.fn());
       await expect(service.remove('anyid')).rejects.toThrow(
         new BadRequestException('Error: hobby could not be deleted'),
       );

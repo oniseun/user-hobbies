@@ -115,15 +115,6 @@ describe('Users Controller', () => {
       expect(findSpy).toHaveBeenCalledWith('anyid');
     });
 
-    it('should throw if UsersService findOne throws', async () => {
-      jest
-        .spyOn(usersService, 'findOne')
-        .mockRejectedValueOnce(new NotFoundException());
-      await expect(
-        usersController.getUser(response, 'anyid'),
-      ).rejects.toThrow(new NotFoundException());
-    });
-
     it('should return a user on success', async () => {
       jest
         .spyOn(usersService, 'findOne')
@@ -162,17 +153,11 @@ describe('Users Controller', () => {
   describe('deleteUser()', () => {
     it('should call method remove() in UsersService with correct value', async () => {
       const deleteSpy = jest.spyOn(usersService, 'remove');
-      await usersController.deleteUser(response, 'anyid');
+      const res = await usersController.deleteUser(response, 'anyid');
       expect(deleteSpy).toHaveBeenCalledWith('anyid');
+      expect(res.res.code).toEqual(200);
+      expect(res.res).toHaveProperty("json")
     });
 
-    it('should throw error if id in UsersService not exists', async () => {
-      jest
-        .spyOn(usersService, 'remove')
-        .mockRejectedValueOnce(new NotFoundException());
-      await expect(
-        usersController.deleteUser(response, 'anyid'),
-      ).rejects.toThrow(new NotFoundException());
-    });
   });
 });

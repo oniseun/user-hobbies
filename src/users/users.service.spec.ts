@@ -7,6 +7,7 @@ import { NotFoundException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { IUser } from './interfaces/user.interface';
 import { Model } from 'mongoose';
+import { IHobby } from 'src/hobbies/interfaces/hobby.interface';
 
 const mockUser: any = {
   name: 'firstName #1',
@@ -38,7 +39,8 @@ const updateUserDto: UpdateUserDto = {
 
 describe('UsersService', () => {
   let service: UsersService;
-  let model: Model<IUser>;
+  let userModel: Model<IUser>;
+  let hobbyModel: Model<IHobby>;
 
   const paginationQueryDto: PaginationQueryDto = {
     limit: 10,
@@ -53,27 +55,30 @@ describe('UsersService', () => {
           provide: getModelToken('User'),
           useValue: {
             find: jest.fn().mockReturnValue(usersArray),
+            skip: jest.fn(),
+            limit: jest.fn(),
+            populate: jest.fn(),
+            offset: jest.fn(),
+            exec: jest.fn(),
             findById: jest.fn(),
+            create: jest.fn().mockResolvedValue(createUserDto),
             findByIdAndUpdate: jest.fn(),
             findByIdAndRemove: jest.fn(),
-            new: jest.fn().mockResolvedValue(mockUser),
-            constructor: jest.fn().mockResolvedValue(mockUser),
-            create: jest.fn().mockResolvedValue(createUserDto),
-            findAll: jest.fn(),
-            findOne: jest.fn(),
-            update: jest.fn(),
-            remove: jest.fn(),
-            exec: jest.fn(),
-            populate: jest.fn(),
-            skip: jest.fn(),
-            offset: jest.fn(),
           },
+        },
+        {
+          provide: getModelToken('Hobby'),
+          useValue: {
+            deleteMany: jest.fn(),
+            exec: jest.fn(),
+          }
         },
       ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    model = module.get<Model<IUser>>(getModelToken('User'));
+    userModel = module.get<Model<IUser>>(getModelToken('User'));
+    hobbyModel = module.get<Model<IHobby>>(getModelToken('Hobby'));
   });
 
   it('should be defined', () => {
@@ -82,7 +87,7 @@ describe('UsersService', () => {
 
   describe('findAll()', () => {
     it('should return all users', async () => {
-      jest.spyOn(model, 'find').mockReturnValue({
+      jest.spyOn(userModel, 'find').mockReturnValue({
         exec: jest.fn().mockResolvedValueOnce(usersArray),
         skip: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
@@ -95,7 +100,7 @@ describe('UsersService', () => {
 
   describe('findOne()', () => {
     it('should return one user', async () => {
-      const findSpy = jest.spyOn(model, 'findById').mockReturnValueOnce({
+      const findSpy = jest.spyOn(userModel, 'findById').mockReturnValueOnce({
         exec: jest.fn().mockResolvedValueOnce(mockUser),
         populate: jest.fn().mockReturnThis(),
       } as any);
@@ -105,7 +110,7 @@ describe('UsersService', () => {
     });
 
     it('should throw if find one user throws', async () => {
-      jest.spyOn(model, 'findById').mockReturnValueOnce({
+      jest.spyOn(userModel, 'findById').mockReturnValueOnce({
         exec: jest.fn(() => null),
         populate: jest.fn().mockReturnThis(),
       } as any);
@@ -117,7 +122,7 @@ describe('UsersService', () => {
 
   describe('create()', () => {
     it('should insert a new user', async () => {
-      jest.spyOn(model, 'create').mockImplementationOnce(() =>
+      jest.spyOn(userModel, 'create').mockImplementationOnce(() =>
         Promise.resolve({
           _id: 'a id',
           name: 'firstName #1',
@@ -137,9 +142,9 @@ describe('UsersService', () => {
 
   describe('update()', () => {
     it('should call UserSchema update with correct values', async () => {
-      jest.spyOn(model, 'findByIdAndUpdate').mockResolvedValueOnce({
+      jest.spyOn(userModel, 'findByIdAndUpdate').mockResolvedValueOnce({
         _id: 'anyid',
-        updateUserDto,
+        ...updateUserDto,
         new: true,
       } as any);
 
@@ -164,10 +169,16 @@ describe('UsersService', () => {
 
   describe('remove()', () => {
     it('should call UserSchema remove with correct value', async () => {
-      const removeSpy = jest.spyOn(model, 'findByIdAndRemove');
+      const removeSpy = jest.spyOn(userModel, 'findByIdAndRemove').mockResolvedValueOnce(
+        {
+          hobbies: []
+        } as any
+      )
       const retVal = await service.remove('any id');
       expect(removeSpy).toBeCalledWith('any id');
-      expect(retVal).toBeUndefined();
+      expect(retVal).toStrictEqual({
+        hobbies:[]
+      });
     });
 
     it('should throw if UserSchema remove throws', async () => {

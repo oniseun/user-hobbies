@@ -6,6 +6,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { IHobby } from './interfaces/hobby.interface';
+import { IUser } from '../users/interfaces/user.interface';
 
 const mockHobby: any = {
   _id: 'anyid',
@@ -42,7 +43,8 @@ const createHobbyDto: CreateHobbyDto = {
 
 describe('HobbiesService', () => {
   let service: HobbiesService;
-  let model: Model<IHobby>;
+  let hobbyModel: Model<IHobby>;
+  let userModel: Model<IUser>
 
   const paginationQueryDto: PaginationQueryDto = {
     limit: 10,
@@ -77,6 +79,7 @@ describe('HobbiesService', () => {
             findById: jest.fn(),
             findByIdAndUpdate: jest.fn(),
             findByIdAndRemove: jest.fn(),
+            findOneAndDelete: jest.fn(),
             new: jest.fn().mockResolvedValue(mockHobby),
             constructor: jest.fn().mockResolvedValue(mockHobby),
             findOne: jest.fn(),
@@ -89,11 +92,20 @@ describe('HobbiesService', () => {
             limit: jest.fn(),
           },
         },
+        {
+          provide: getModelToken('User'),
+          useValue: {
+            findById: jest.fn(),
+            findByIdAndUpdate: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<HobbiesService>(HobbiesService);
-    model = module.get<Model<IHobby>>(getModelToken('Hobby'));
+    hobbyModel = module.get<Model<IHobby>>(getModelToken('Hobby'));
+    userModel = module.get<Model<IUser>>(getModelToken('User'));
   });
 
   it('should be defined', () => {
@@ -102,7 +114,7 @@ describe('HobbiesService', () => {
 
   describe('findAll()', () => {
     it('should return all hobbies', async () => {
-      jest.spyOn(model, 'find').mockReturnValue({
+      jest.spyOn(hobbyModel, 'find').mockReturnValue({
         exec: jest.fn().mockResolvedValueOnce(hobbiesArray),
         skip: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
@@ -115,7 +127,7 @@ describe('HobbiesService', () => {
 
   describe('create()', () => {
     it('should insert a new hobby', async () => {
-      jest.spyOn(model, 'create').mockImplementationOnce(() =>
+      jest.spyOn(hobbyModel, 'create').mockImplementationOnce(() =>
         Promise.resolve({
           _id: 'a id',
           name: 'name #1',
@@ -124,6 +136,13 @@ describe('HobbiesService', () => {
           userId: 'any_user_id',
         }),
       );
+
+      jest.spyOn(userModel, 'findOne').mockReturnValue({
+        _id: 'any_user_id',
+        name: 'firstName #2',
+        hobbies: [],
+        save: jest.fn()
+      } as any);
       const newHobby: IHobby | BadRequestException = await service.create(createHobbyDto);
       expect(newHobby).toEqual({
         _id: 'a id',
@@ -137,18 +156,20 @@ describe('HobbiesService', () => {
 
   describe('remove()', () => {
     it('should call HobbySchema remove with correct value', async () => {
-      const removeSpy = jest.spyOn(model, 'findByIdAndRemove');
+      const removeSpy = jest.spyOn(hobbyModel, 'findOneAndDelete');
+      jest.spyOn(userModel, 'findByIdAndUpdate').mockImplementationOnce(jest.fn());
       const retVal = await service.remove('any id');
-      expect(removeSpy).toBeCalledWith('any id');
-      expect(retVal).toBeUndefined();
+      expect(removeSpy).toBeCalledWith({_id:"any id"});
     });
 
     it('should throw if HobbySchema remove throws', async () => {
+
+      jest.spyOn(userModel, 'findByIdAndUpdate').mockImplementationOnce(jest.fn());
       jest
-        .spyOn(model, 'findByIdAndRemove')
-        .mockRejectedValueOnce(new NotFoundException());
+        .spyOn(hobbyModel, 'findOneAndDelete')
+        .mockRejectedValueOnce(new BadRequestException('Error: hobby could not be deleted'));
       await expect(service.remove('anyid')).rejects.toThrow(
-        new NotFoundException(),
+        new BadRequestException('Error: hobby could not be deleted'),
       );
     });
   });

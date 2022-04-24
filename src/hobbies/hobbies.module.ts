@@ -6,7 +6,7 @@ import {
   HobbySchema,
   Hobby,
 } from './schemas/hobby.schema';
-import { User, UserSchema } from 'src/users/schemas/user.schema';
+import { User, UserSchema } from '../users/schemas/user.schema';
 
 @Module({
   imports: [

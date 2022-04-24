@@ -5,7 +5,7 @@ import { IUser } from './interfaces/user.interface';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { User } from './schemas/user.schema';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
-import { Hobby } from 'src/hobbies/schemas/hobby.schema';
+import { Hobby } from '../hobbies/schemas/hobby.schema';
 
 @Injectable()
 export class UsersService {

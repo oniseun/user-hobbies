@@ -5,8 +5,8 @@ import { IHobby } from './interfaces/hobby.interface';
 import { CreateHobbyDto } from './dto/create-hobby.dto';
 import { Hobby } from './schemas/hobby.schema';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
-import { User } from 'src/users/schemas/user.schema';
-import { IUser } from 'src/users/interfaces/user.interface';
+import { User } from '../users/schemas/user.schema';
+import { IUser } from '../users/interfaces/user.interface';
 
 @Injectable()
 export class HobbiesService {
@@ -31,7 +31,6 @@ export class HobbiesService {
     createHobbyDto: CreateHobbyDto,
   ): Promise<IHobby | BadRequestException> {
     const user = await this.userModel.findOne({_id: createHobbyDto.userId})
-    console.log({user})
     if (!user) {
         throw new NotFoundException(`user #${createHobbyDto.userId} not found`);
     }
@@ -64,7 +63,7 @@ export class HobbiesService {
       return hobby;
     } catch (e) {
       console.error(e)
-      throw new BadRequestException(`Error: hobby could not be deleted`, e);
+      throw new BadRequestException(`Error: hobby could not be deleted`);
     }
   }
 }

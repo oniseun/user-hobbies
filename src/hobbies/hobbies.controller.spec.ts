@@ -130,18 +130,19 @@ describe('Hobbies Controller', () => {
 
   describe('deleteHobby()', () => {
     it('should call method remove in HobbiesService with correct value', async () => {
-      const deleteSpy = jest.spyOn(hobbiesService, 'remove');
-      await hobbiesController.deleteHobby(response, 'anyid');
+      const deleteSpy = jest.spyOn(hobbiesService, 'remove').mockReturnValue({
+        _id: 'a id',
+        name: 'name #1',
+        passionLevel: 'High',
+        year: 2022,
+        userId: 'any_user_id',
+      } as any)
+      const res = await hobbiesController.deleteHobby(response, 'anyid');
       expect(deleteSpy).toHaveBeenCalledWith('anyid');
+      expect(res.res.code).toEqual(200);
+      expect(res.res).toHaveProperty("json")
+
     });
 
-    it('should throw error if id in HobbiesService not exists', async () => {
-      jest
-        .spyOn(hobbiesService, 'remove')
-        .mockRejectedValueOnce(new NotFoundException());
-      await expect(
-        hobbiesController.deleteHobby(response, 'anyid'),
-      ).rejects.toThrow(new NotFoundException());
-    });
   });
 });

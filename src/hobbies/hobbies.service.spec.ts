@@ -76,20 +76,13 @@ describe('HobbiesService', () => {
           provide: getModelToken('Hobby'),
           useValue: {
             find: jest.fn().mockReturnValue(hobbiesList),
-            findById: jest.fn(),
-            findByIdAndUpdate: jest.fn(),
-            findByIdAndRemove: jest.fn(),
-            findOneAndDelete: jest.fn(),
-            new: jest.fn().mockResolvedValue(mockHobby),
-            constructor: jest.fn().mockResolvedValue(mockHobby),
-            findOne: jest.fn(),
-            create: jest.fn(),
-            remove: jest.fn(),
-            exec: jest.fn(),
-            populate: jest.fn(),
-            offset: jest.fn(),
             skip: jest.fn(),
             limit: jest.fn(),
+            populate: jest.fn(),
+            exec: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
+            findOneAndDelete: jest.fn(),
           },
         },
         {
@@ -98,6 +91,7 @@ describe('HobbiesService', () => {
             findById: jest.fn(),
             findByIdAndUpdate: jest.fn(),
             findOne: jest.fn(),
+            save: jest.fn(),
           },
         },
       ],
@@ -156,21 +150,28 @@ describe('HobbiesService', () => {
 
   describe('remove()', () => {
     it('should call HobbySchema remove with correct value', async () => {
-      const removeSpy = jest.spyOn(hobbyModel, 'findOneAndDelete');
+      const removeSpy = jest.spyOn(hobbyModel, 'findOneAndDelete').mockResolvedValueOnce(
+        {
+          userId: "xyzuserid"
+        } as any
+      )
       jest.spyOn(userModel, 'findByIdAndUpdate').mockImplementationOnce(jest.fn());
       const retVal = await service.remove('any id');
-      expect(removeSpy).toBeCalledWith({_id:"any id"});
+      expect(removeSpy).toBeCalledWith({ _id : "any id" });
+      expect(retVal).toStrictEqual({
+        userId: "xyzuserid"
+      });
     });
 
     it('should throw if HobbySchema remove throws', async () => {
 
       jest
-        .spyOn(hobbyModel, 'findOneAndDelete')
-        .mockRejectedValueOnce(new BadRequestException('Error: hobby could not be deleted'));
-      jest.spyOn(userModel, 'findByIdAndUpdate').mockImplementationOnce(jest.fn());
+        .spyOn(service, 'remove')
+        .mockRejectedValueOnce(new BadRequestException());
       await expect(service.remove('anyid')).rejects.toThrow(
-        new BadRequestException('Error: hobby could not be deleted'),
+        new BadRequestException(),
       );
     });
+
   });
 });
